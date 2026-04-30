@@ -89,6 +89,8 @@ body {
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
   padding: 78px 16px 20px;
   border-right: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.72);
@@ -119,6 +121,18 @@ body {
 .node-palette {
   display: grid;
   gap: 10px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.sidebar-footer__logo {
+  display: block;
+  width: 100%;
+  max-width: 190px;
+  height: auto;
 }
 
 .drag-button {
@@ -924,6 +938,10 @@ body {
     padding-top: 64px;
     border-right: 0;
     border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .sidebar-footer {
+    margin-top: 20px;
   }
 
   .metadata-form-node {

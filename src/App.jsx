@@ -30,6 +30,7 @@ import aimsIcon from './assets/aims.png';
 import rdfLogo from './assets/250px-Rdf_logo.svg.png';
 import roCrateLogo from './assets/RO-Crate.png';
 import rwthCaadLogo from './assets/rwth_caad_en_schwarz_grau_rgb.svg';
+import nfdi4ingLogo from './assets/nfdi4ing_24.svg';
 
 const initialNodes = [
   {
@@ -933,6 +934,9 @@ export default function App() {
               </span>
             </button>
           ))}
+        </div>
+        <div className="sidebar-footer">
+          <img className="sidebar-footer__logo" src={nfdi4ingLogo} alt="NFDI4Ing" />
         </div>
       </aside>
 

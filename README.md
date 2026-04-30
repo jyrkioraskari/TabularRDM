@@ -150,3 +150,7 @@ the derived dataset id.
 `npm run build` may show a Vite warning about chunks larger than 500 kB. This is
 expected because libraries such as rdfstore, xlsx, ro-crate, and jszip are large.
 The warning is not a build failure.
+
+<p align="right">
+  <img src="src/assets/nfdi4ing_24.svg" alt="NFDI4Ing" width="220">
+</p>
