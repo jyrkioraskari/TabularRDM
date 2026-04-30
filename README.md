@@ -1,6 +1,6 @@
-# TabulatRDM
+# TabularRDM
 
-TabulatRDM is a React Flow application for building a small tabular research
+TabularRDM is a React Flow application for building a small tabular research
 data workflow. Users can load spreadsheet data, preview columns, describe those
 columns, create RDF metadata, inspect RDF in a store, and export an RO-Crate ZIP.
 
