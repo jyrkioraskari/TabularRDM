@@ -1,0 +1,36 @@
+{
+  "name": "TabulatRDM",
+  "version": "1.0.0",
+  "description": "Simple React Flow app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "node server.js"
+  },
+  "private": true,
+  "dependencies": {
+    "@ro-kit/ui-widgets": "^1.0.43",
+    "@ulb-darmstadt/shacl-form": "^3.0.4",
+    "@xyflow/react": "^12.4.2",
+    "jsonld": "^9.0.0",
+    "jszip": "^3.10.1",
+    "leaflet": "^1.9.4",
+    "leaflet-editable": "^1.3.2",
+    "leaflet.fullscreen": "^4.0.0",
+    "n3": "^1.26.0",
+    "rdfstore": "^0.9.17",
+    "rdfxml-streaming-parser": "^3.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ro-crate": "^3.7.1",
+    "shacl-engine": "^1.1.0",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}
