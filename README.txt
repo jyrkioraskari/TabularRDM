@@ -1,4 +1,4 @@
-TabulatRDM
+TabularRDM
 ==========
 
 TabulatRDM is a React Flow application for building a small tabular research
