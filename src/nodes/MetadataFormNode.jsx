@@ -1,3 +1,8 @@
+/**
+ * Node that embeds the SHACL form web component for dataset metadata editing.
+ * It loads default or profile-selected shapes, tracks form validity, and emits
+ * serialized RDF to connected workflow nodes when the form is submitted.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import '@ulb-darmstadt/shacl-form';

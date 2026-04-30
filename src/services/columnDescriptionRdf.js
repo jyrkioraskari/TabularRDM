@@ -1,3 +1,8 @@
+/**
+ * RDF serialization helpers for ColumnDescriptionNode. The exported serializer
+ * turns column headers, descriptions, and QUDT units into Turtle resources that
+ * downstream RDF Store and RO-Crate nodes can consume.
+ */
 const TABULAR_PREFIX = 'https://nfdi4ing.de/tabular/';
 const QUDT_UNIT_PREFIX = 'http://qudt.org/vocab/unit/';
 
@@ -43,6 +48,11 @@ function toUnitIri(field) {
   return '';
 }
 
+/**
+ * Converts column-description form fields into Turtle consumed by RDF Store and
+ * RO-Crate nodes. Empty descriptions are omitted, but every detected header is
+ * still represented as a ColumnDataDescription resource.
+ */
 export function serializeColumnDescriptionsToTurtle(fields) {
   const rows = Array.isArray(fields) ? fields : [];
   const triples = rows

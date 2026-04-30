@@ -1,3 +1,7 @@
+/**
+ * Node for browsing QUDT units. It can be filtered by a connected quantity kind
+ * and exposes selected units as draggable payloads for ColumnDescriptionNode.
+ */
 import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { queryUnits } from '../services/qudtService';

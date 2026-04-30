@@ -1,3 +1,8 @@
+/**
+ * QUDT vocabulary service for QuantityKindNode and UnitNode. It fetches Turtle
+ * vocabularies, parses them into N3 stores, caches the stores, and returns
+ * normalized rows for UI filtering and drag-and-drop unit assignment.
+ */
 import { DataFactory, Parser, Store } from 'n3';
 
 export const QUDT_QUANTITY_KIND_URL = 'http://qudt.org/3.2.1/vocab/quantitykind';
@@ -53,6 +58,10 @@ const QUDT_UNIT = namedNode('http://qudt.org/schema/qudt/Unit');
 let quantityKindStoreRequest;
 let unitStoreRequest;
 
+/**
+ * Browser builds use the local /qudt proxy from server.js to avoid CORS issues.
+ * Server-side callers can still fetch the original QUDT URL directly.
+ */
 function getQudtFetchUrl(url) {
   if (typeof window === 'undefined') {
     return url;
@@ -132,6 +141,10 @@ async function fetchTurtleStore(url) {
   return parseTurtle(await response.text(), url);
 }
 
+/**
+ * Quantity-kind and unit vocabularies are large and reused across searches, so
+ * each vocabulary is fetched once and cached as an in-flight/completed promise.
+ */
 async function fetchQuantityKindStore({ signal } = {}) {
   if (!quantityKindStoreRequest) {
     quantityKindStoreRequest = fetchTurtleStore(QUDT_QUANTITY_KIND_URL).catch((error) => {
@@ -254,6 +267,9 @@ function buildQuantityRows(store) {
   return [...rowsByKey.values()].sort(compareLabels);
 }
 
+/**
+ * Returns QUDT quantity kinds for the Quantity Kinds node.
+ */
 export async function queryQuantityKinds({ limit, offset = 0, signal } = {}) {
   const store = await fetchQuantityKindStore({ signal });
   const rows = buildQuantityKindRows(store).sort(compareLabels);
@@ -261,6 +277,9 @@ export async function queryQuantityKinds({ limit, offset = 0, signal } = {}) {
   return typeof limit === 'number' ? rows.slice(offset, offset + limit) : rows.slice(offset);
 }
 
+/**
+ * Returns QUDT units for the Units node.
+ */
 export async function queryUnits({ limit, offset = 0, signal } = {}) {
   const store = await fetchUnitStore({ signal });
   const rows = buildQuantityRows(store);
@@ -268,6 +287,9 @@ export async function queryUnits({ limit, offset = 0, signal } = {}) {
   return typeof limit === 'number' ? rows.slice(offset, offset + limit) : rows.slice(offset);
 }
 
+/**
+ * Returns units applicable to a selected quantity kind label and language.
+ */
 export async function queryApplicableUnitsForQuantityKind({
   label = 'Acceleration',
   language = 'en',

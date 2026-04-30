@@ -1,3 +1,7 @@
+/**
+ * Node that packages connected metadata and tabular sheet exports into an
+ * RO-Crate ZIP. It reads optional dataset settings from an export_config sheet.
+ */
 import { useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import * as XLSX from 'xlsx';
@@ -19,6 +23,10 @@ function slugify(value) {
   return slug || 'dataset';
 }
 
+/**
+ * Reads an optional export_config sheet. The parser accepts common two-column
+ * key/value layouts and normalizes keys to snake_case for template lookups.
+ */
 function parseConfig(rows = []) {
   return rows.reduce((config, row) => {
     const entries = Object.entries(row);
@@ -41,6 +49,10 @@ function parseConfig(rows = []) {
   }, {});
 }
 
+/**
+ * Builds a browser-downloadable RO-Crate ZIP. Each payload file is added both
+ * to the ZIP and to ro-crate-metadata.json as a File entity.
+ */
 async function createROCrateZip(options = {}) {
   const {
     files = [],
@@ -88,6 +100,11 @@ async function createROCrateZip(options = {}) {
 }
 
 export default function ROCrateNode({ data, selected }) {
+  /**
+   * Implements the RO-Crate download template:
+   * data.json contains connected RDF content, workbook sheets become CSV files,
+   * and export_config can override dataset metadata.
+   */
   const handleCrateDownload = useCallback(async () => {
     if (!data.jsonLdContent?.jsonLd) {
       return;

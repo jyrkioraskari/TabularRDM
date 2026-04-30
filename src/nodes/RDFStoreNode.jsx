@@ -1,3 +1,7 @@
+/**
+ * Node that loads connected Turtle RDF into rdfstore-js. It reports triple
+ * counts, previews the loaded RDF, and provides a metadata.ttl download.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import rdfstoreScriptUrl from 'rdfstore/dist/rdfstore.js?url';

@@ -1,3 +1,8 @@
+/**
+ * Node for searching AIMS application profiles and selecting one for metadata
+ * form generation. Searches are debounced and abortable so stale requests do
+ * not update the UI after the query changes.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import {

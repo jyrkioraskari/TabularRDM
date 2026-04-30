@@ -1,3 +1,8 @@
+/**
+ * AIMS API client used by metadata profile search and metadata form setup.
+ * It discovers the current application-profile endpoint from Swagger, searches
+ * profiles, and returns SHACL/Turtle definitions for selected profiles.
+ */
 const AIMS_SWAGGER_URL = 'https://pg4aims.ulb.tu-darmstadt.de/swagger/v1/swagger.json';
 const APPLICATION_PROFILES_PATH = '/AIMS/application-profiles';
 export const DEFAULT_PROFILE_QUERY = 'RO-kit';
@@ -65,6 +70,10 @@ function buildSingleProfileDefinition(profile) {
     .join('\n');
 }
 
+/**
+ * Discovers the current AIMS application-profile endpoint from Swagger before
+ * querying it. This avoids hard-coding a deployment host beyond the Swagger URL.
+ */
 export async function fetchAimsApplicationProfiles({
   query,
   includeDefinition = false,
@@ -121,6 +130,11 @@ export function buildCombinedProfileDefinitions(profiles) {
     .join('\n\n');
 }
 
+/**
+ * Returns SHACL/Turtle shapes for one selected profile. If the search result
+ * already contains a definition it is reused; otherwise the profile is fetched
+ * again by base URI with includeDefinition enabled.
+ */
 export async function fetchAimsApplicationProfileDefinition({ profile, signal }) {
   const baseUri = getProfileBaseUri(profile).trim();
 

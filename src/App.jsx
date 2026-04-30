@@ -48,6 +48,10 @@ const initialNodes = [
 
 const tabularPreviewEdgeStyle = { stroke: '#2563eb', strokeWidth: 2 };
 
+/**
+ * Highlights connections that carry workflow data between compatible nodes.
+ * The styling is visual only; data propagation is handled by deriveNodeData().
+ */
 function applySemanticEdgeStyle(edge, nodes) {
   const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
 
@@ -133,6 +137,10 @@ const appText = {
   },
 };
 
+/**
+ * Creates editable column-description rows from spreadsheet headers while
+ * preserving any descriptions and units already entered for unchanged headers.
+ */
 function buildColumnDescriptionFields(headers, previousFields = []) {
   const previousByHeader = new Map(
     previousFields.map((field) => [field.header, field]),
@@ -173,6 +181,11 @@ function isEmptyRow(row) {
   return row.every((cell) => normalizeCellValue(cell).trim().length === 0);
 }
 
+/**
+ * Parses a loaded workbook into two shapes:
+ * - a small first-sheet preview used by preview/description nodes
+ * - all sheets as row objects for later RO-Crate CSV export
+ */
 function parseTabularWorkbook(buffer, previewRowCount = 5) {
   const workbook = XLSX.read(buffer, {
     type: 'array',
@@ -219,6 +232,10 @@ function parseTabularWorkbook(buffer, previewRowCount = 5) {
   return { headers, rows, rowCount: Math.max(tableRows.length - 1, 0), sheetName, sheets };
 }
 
+/**
+ * Propagates tabular payloads through outgoing edges. Downstream nodes receive
+ * only the fields they need, keeping node-specific state isolated in data.
+ */
 function recalculateFlows(nodes, edges, tabularMemory) {
   const outgoingEdgesBySource = new Map();
 
@@ -346,6 +363,10 @@ function getConnectedMetadataFormIds(nodes, edges, profileSearchNodeId) {
   return [...metadataFormIds];
 }
 
+/**
+ * Collects serialized RDF from metadata-producing nodes connected to RDF Store
+ * nodes. RDF Store nodes consume the combined Turtle string via data.rdfInput.
+ */
 function propagateMetadataRdf(nodes, edges) {
   const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
   const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
@@ -387,6 +408,9 @@ function propagateMetadataRdf(nodes, edges) {
   });
 }
 
+/**
+ * Applies the selected Quantity Kind as a filter for connected Unit nodes.
+ */
 function propagateQuantityKindToUnits(nodes, edges) {
   const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
   const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
@@ -422,6 +446,11 @@ function propagateQuantityKindToUnits(nodes, edges) {
   });
 }
 
+/**
+ * Collects RDF content connected to RO-Crate nodes. The current metadata
+ * producers emit Turtle, but the RO-Crate node keeps the existing jsonLdContent
+ * property name because the export template expects that shape.
+ */
 function propagateROCrateInputs(nodes, edges) {
   const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
   const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
@@ -464,6 +493,10 @@ function propagateROCrateInputs(nodes, edges) {
   });
 }
 
+/**
+ * Central recomputation pipeline for derived node data. Call this after any
+ * node or edge change that may affect previews, RDF, units, or RO-Crate inputs.
+ */
 function deriveNodeData(nodes, edges, tabularMemory) {
   const flowNodes = recalculateFlows(nodes, edges, tabularMemory);
   const nodesWithMetadata = propagateMetadataRdf(flowNodes, edges);

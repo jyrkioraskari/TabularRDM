@@ -1,3 +1,8 @@
+/**
+ * Web worker for loading default metadata shapes without blocking the React UI.
+ * It fetches RO-kit AIMS profiles, combines their definitions, caches the
+ * in-flight request, and responds to metadataShapesService messages.
+ */
 import {
   buildCombinedProfileDefinitions,
   buildProfileSummary,

@@ -1,3 +1,7 @@
+/**
+ * Source node for selecting a tabular file from disk. It reads the file as an
+ * ArrayBuffer and passes it to App.jsx for workbook parsing and propagation.
+ */
 import { useCallback, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import tabularFileIcon from '../assets/tabular-file-icon.png';

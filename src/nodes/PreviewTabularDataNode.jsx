@@ -1,3 +1,7 @@
+/**
+ * Read-only node that displays a small preview of the connected tabular file.
+ * App.jsx provides headers and rows after parsing the loaded workbook.
+ */
 import { Handle, Position } from '@xyflow/react';
 import spreadsheetIcon from '../assets/matt-icons_text-x-office-generic-spreadsheet.svg';
 

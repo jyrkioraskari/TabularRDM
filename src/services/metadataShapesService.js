@@ -1,8 +1,16 @@
+/**
+ * Main-thread facade for the metadata shapes worker. It manages worker startup,
+ * request IDs, pending promises, and a shared cached default-shapes request.
+ */
 let worker;
 let nextRequestId = 0;
 let defaultMetadataShapesRequest;
 const pendingRequests = new Map();
 
+/**
+ * Lazily starts the metadata-shapes worker and resolves pending request
+ * promises when the worker posts responses back.
+ */
 function getWorker() {
   if (!worker) {
     worker = new Worker(new URL('./metadataShapes.worker.js', import.meta.url), {
@@ -52,6 +60,10 @@ function requestDefaultMetadataShapes() {
   });
 }
 
+/**
+ * Loads the default metadata shapes once and shares the in-flight promise across
+ * Metadata Form nodes.
+ */
 export function fetchDefaultMetadataShapes() {
   if (!defaultMetadataShapesRequest) {
     defaultMetadataShapesRequest = requestDefaultMetadataShapes().catch((error) => {

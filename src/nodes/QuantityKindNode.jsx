@@ -1,3 +1,7 @@
+/**
+ * Node for browsing and selecting QUDT quantity kinds. The selected quantity
+ * kind is propagated to connected UnitNode instances as a unit filter.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { queryQuantityKinds } from '../services/qudtService';

@@ -1,3 +1,8 @@
+/**
+ * Node for editing metadata about each detected spreadsheet column.
+ * Descriptions are typed directly, units are assigned by dropping values from
+ * UnitNode, and every change is sent upward for automatic RDF serialization.
+ */
 import { useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import tabularSchemaIcon from '../assets/tabular_schema.png';
@@ -36,6 +41,8 @@ export default function ColumnDescriptionNode({ id, data, selected, onFieldsChan
 
   const handleUnitDrop = useCallback(
     (event, index) => {
+      // Unit nodes provide structured JSON; the text fallback keeps drops from
+      // plain external sources harmless.
       const rawUnit =
         event.dataTransfer.getData(UNIT_DRAG_MIME_TYPE) ||
         event.dataTransfer.getData('text/plain');
