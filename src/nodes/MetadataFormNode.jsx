@@ -4,10 +4,10 @@
  * serialized RDF to connected workflow nodes when the form is submitted.
  */
 import { useEffect, useRef, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import '@ulb-darmstadt/shacl-form';
 import { fetchDefaultMetadataShapes } from '../services/metadataShapesService';
 import metadataFormIcon from '../assets/Architetto_--_Formulario.svg';
+import NodeHandle from './NodeHandle';
 
 const defaultMetadataValuesSubject = 'https://example.org/datasets/ro-kit';
 const defaultMetadataValues = `@prefix dcat: <http://www.w3.org/ns/dcat#> .
@@ -101,7 +101,7 @@ export default function MetadataFormNode({ id, data, selected, onRdfChange }) {
 
   return (
     <div className={`metadata-form-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="metadata-form-node__header">
         <img src={metadataFormIcon} alt="" className="metadata-form-node__icon" />
         <p className="metadata-form-node__title">{data.label}</p>
@@ -129,7 +129,7 @@ export default function MetadataFormNode({ id, data, selected, onRdfChange }) {
         {hasSaved ? 'Metadata saved' : isValid ? 'Metadata is valid' : 'Metadata not valid yet'}
       </p>
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

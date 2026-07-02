@@ -203,6 +203,49 @@ body {
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
 }
 
+.react-flow__handle.node-handle {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(37, 99, 235, 0.45);
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+}
+
+.react-flow__handle.node-handle--input {
+  left: -9px;
+}
+
+.react-flow__handle.node-handle--output {
+  right: -9px;
+}
+
+.react-flow__handle.node-handle:hover {
+  border-color: rgba(37, 99, 235, 0.85);
+  background: #dbeafe;
+}
+
+.node-handle__icon {
+  width: 12px;
+  height: 12px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.node-handle__icon svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .tabular-file-node {
   min-width: 180px;
   padding: 8px;
@@ -651,7 +694,16 @@ body {
 .unit-node__header {
   display: flex;
   align-items: center;
+  gap: 8px;
   margin: 0 0 10px;
+}
+
+.quantity-kind-node__icon,
+.unit-node__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .quantity-kind-node__title,
@@ -919,6 +971,42 @@ body {
   background: #f1f5f9;
 }
 
+.coscine-node {
+  width: 260px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.coscine-node.selected {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.coscine-node__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.coscine-node__icon {
+  width: 92px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.coscine-node__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.coscine-node__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
 @media (max-width: 800px) {
   .app-logo {
     width: 140px;
@@ -962,6 +1050,10 @@ body {
   }
 
   .ro-crate-node {
+    width: calc(100vw - 40px);
+  }
+
+  .coscine-node {
     width: calc(100vw - 40px);
   }
 }

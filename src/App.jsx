@@ -20,6 +20,7 @@ import RDFStoreNode from './nodes/RDFStoreNode';
 import ROCrateNode from './nodes/ROCrateNode';
 import QuantityKindNode from './nodes/QuantityKindNode';
 import UnitNode from './nodes/UnitNode';
+import CoscineNode from './nodes/CoscineNode';
 import { fetchAimsApplicationProfileDefinition } from './services/aimsApi';
 import { serializeColumnDescriptionsToTurtle } from './services/columnDescriptionRdf';
 import tabularFileIcon from './assets/tabular-file-icon.png';
@@ -29,6 +30,8 @@ import metadataFormIcon from './assets/Architetto_--_Formulario.svg';
 import aimsIcon from './assets/aims.png';
 import rdfLogo from './assets/250px-Rdf_logo.svg.png';
 import roCrateLogo from './assets/RO-Crate.png';
+import qudtAvatar from './assets/qudt-avatar.jpg';
+import coscineLogo from './assets/coscine_rgb.svg';
 import rwthCaadLogo from './assets/rwth_caad_en_schwarz_grau_rgb.svg';
 import nfdi4ingLogo from './assets/nfdi4ing_24.svg';
 
@@ -103,12 +106,13 @@ const nodeTemplates = [
   { type: 'tabularFile', label: 'Tabular file', icon: tabularFileIcon },
   { type: 'previewTabular', label: 'Preview Tabular Data', icon: spreadsheetIcon },
   { type: 'columnDescription', label: 'Column Description', icon: tabularSchemaIcon },
-  { type: 'quantityKind', label: 'Quantity Kinds' },
-  { type: 'unit', label: 'Units' },
+  { type: 'quantityKind', label: 'Quantity Kinds', icon: qudtAvatar },
+  { type: 'unit', label: 'Units', icon: qudtAvatar },
   { type: 'profileSearch', label: 'Metadata Profile Search', icon: aimsIcon },
   { type: 'metadataForm', label: 'Metadata Form', icon: metadataFormIcon },
   { type: 'rdfStore', label: 'RDF Store', icon: rdfLogo },
   { type: 'roCrate', label: 'RO-Crate', icon: roCrateLogo },
+  { type: 'coscine', label: 'Coscine', icon: coscineLogo },
 ];
 
 const globalLanguageOptions = [
@@ -781,6 +785,7 @@ export default function App() {
       unit: UnitNode,
       rdfStore: RDFStoreNode,
       roCrate: ROCrateNode,
+      coscine: CoscineNode,
     }),
     [],
   );

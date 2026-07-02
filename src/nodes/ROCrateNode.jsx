@@ -3,11 +3,11 @@
  * RO-Crate ZIP. It reads optional dataset settings from an export_config sheet.
  */
 import { useCallback } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import * as XLSX from 'xlsx';
 import { ROCrate } from 'ro-crate';
 import JSZip from 'jszip';
 import roCrateLogo from '../assets/RO-Crate.png';
+import NodeHandle from './NodeHandle';
 
 function normalize(value) {
   return String(value ?? '').trim().toLocaleLowerCase();
@@ -160,7 +160,7 @@ export default function ROCrateNode({ data, selected }) {
 
   return (
     <div className={`ro-crate-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="ro-crate-node__header">
         <img src={roCrateLogo} alt="" className="ro-crate-node__icon" />
         <p className="ro-crate-node__title">{data.label}</p>
@@ -176,7 +176,7 @@ export default function ROCrateNode({ data, selected }) {
       >
         Download
       </button>
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

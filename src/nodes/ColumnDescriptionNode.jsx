@@ -4,8 +4,8 @@
  * UnitNode, and every change is sent upward for automatic RDF serialization.
  */
 import { useCallback } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import tabularSchemaIcon from '../assets/tabular_schema.png';
+import NodeHandle from './NodeHandle';
 
 const UNIT_DRAG_MIME_TYPE = 'application/tabulatrdm-unit';
 
@@ -66,7 +66,7 @@ export default function ColumnDescriptionNode({ id, data, selected, onFieldsChan
 
   return (
     <div className={`column-description-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="column-description-node__header">
         <img src={tabularSchemaIcon} alt="" className="column-description-node__icon" />
         <p className="column-description-node__title">{data.label}</p>
@@ -123,7 +123,7 @@ export default function ColumnDescriptionNode({ id, data, selected, onFieldsChan
         {hasFields ? 'Column descriptions are saved as RDF automatically' : 'No RDF to save yet'}
       </p>
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

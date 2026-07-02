@@ -3,8 +3,9 @@
  * kind is propagated to connected UnitNode instances as a unit filter.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import { queryQuantityKinds } from '../services/qudtService';
+import qudtAvatar from '../assets/qudt-avatar.jpg';
+import NodeHandle from './NodeHandle';
 
 function capitalizeInitial(value) {
   if (!value) {
@@ -95,8 +96,9 @@ export default function QuantityKindNode({ id, data, selected, onQuantityKindSel
 
   return (
     <div className={`quantity-kind-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="quantity-kind-node__header">
+        <img src={qudtAvatar} alt="" className="quantity-kind-node__icon" />
         <p className="quantity-kind-node__title">{data.label}</p>
       </div>
 
@@ -135,7 +137,7 @@ export default function QuantityKindNode({ id, data, selected, onQuantityKindSel
         )}
       </div>
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

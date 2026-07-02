@@ -4,13 +4,13 @@
  * not update the UI after the query changes.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import {
   DEFAULT_PROFILE_QUERY,
   fetchAimsApplicationProfiles,
   getProfileBaseUri,
 } from '../services/aimsApi';
 import aimsIcon from '../assets/aims.png';
+import NodeHandle from './NodeHandle';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -136,7 +136,7 @@ export default function MetadataProfileSearchNode({ id, data, selected, onProfil
 
   return (
     <div className={`profile-search-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="profile-search-node__header">
         <img src={aimsIcon} alt="" className="profile-search-node__icon" />
         <p className="profile-search-node__title">{data.label}</p>
@@ -197,7 +197,7 @@ export default function MetadataProfileSearchNode({ id, data, selected, onProfil
         )}
       </div>
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

@@ -2,8 +2,8 @@
  * Read-only node that displays a small preview of the connected tabular file.
  * App.jsx provides headers and rows after parsing the loaded workbook.
  */
-import { Handle, Position } from '@xyflow/react';
 import spreadsheetIcon from '../assets/matt-icons_text-x-office-generic-spreadsheet.svg';
+import NodeHandle from './NodeHandle';
 
 export default function PreviewTabularDataNode({ data, selected }) {
   const headers = Array.isArray(data.headers) ? data.headers : [];
@@ -12,7 +12,7 @@ export default function PreviewTabularDataNode({ data, selected }) {
 
   return (
     <div className={`preview-tabular-data-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="preview-tabular-data-node__header">
         <img src={spreadsheetIcon} alt="" className="preview-tabular-data-node__icon" />
         <p className="preview-tabular-data-node__title">{data.label}</p>
@@ -43,7 +43,7 @@ export default function PreviewTabularDataNode({ data, selected }) {
         <p className="preview-tabular-data-node__empty">No tabular data loaded</p>
       )}
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

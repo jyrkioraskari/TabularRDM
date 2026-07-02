@@ -3,8 +3,9 @@
  * and exposes selected units as draggable payloads for ColumnDescriptionNode.
  */
 import { useEffect, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import { queryUnits } from '../services/qudtService';
+import qudtAvatar from '../assets/qudt-avatar.jpg';
+import NodeHandle from './NodeHandle';
 
 const UNIT_DRAG_MIME_TYPE = 'application/tabulatrdm-unit';
 
@@ -86,8 +87,9 @@ export default function UnitNode({ id, data, selected }) {
 
   return (
     <div className={`unit-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="unit-node__header">
+        <img src={qudtAvatar} alt="" className="unit-node__icon" />
         <p className="unit-node__title">{data.label}</p>
       </div>
 
@@ -144,7 +146,7 @@ export default function UnitNode({ id, data, selected }) {
         )}
       </div>
 
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }

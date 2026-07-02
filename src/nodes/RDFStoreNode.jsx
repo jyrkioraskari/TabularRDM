@@ -3,9 +3,9 @@
  * counts, previews the loaded RDF, and provides a metadata.ttl download.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
 import rdfstoreScriptUrl from 'rdfstore/dist/rdfstore.js?url';
 import rdfLogo from '../assets/250px-Rdf_logo.svg.png';
+import NodeHandle from './NodeHandle';
 
 let rdfstoreScriptPromise = null;
 
@@ -180,7 +180,7 @@ export default function RDFStoreNode({ data, selected }) {
 
   return (
     <div className={`rdf-node${selected ? ' selected' : ''}`}>
-      <Handle type="target" position={Position.Left} />
+      <NodeHandle type="target" />
       <div className="rdf-node__header">
         <img src={rdfLogo} alt="" className="rdf-node__icon" />
         <p className="rdf-node__title">{data.label}</p>
@@ -207,7 +207,7 @@ export default function RDFStoreNode({ data, selected }) {
       ) : null}
       {status ? <p className="rdf-node__status">{status}</p> : null}
       {error ? <p className="rdf-node__error">{error}</p> : null}
-      <Handle type="source" position={Position.Right} />
+      <NodeHandle type="source" />
     </div>
   );
 }
