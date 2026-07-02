@@ -46,6 +46,29 @@ async function fetchCoscineJson(path, apiToken, options = {}) {
   return response.json();
 }
 
+function encodeCoscinePath(path) {
+  return String(path ?? '')
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+}
+
+async function fetchCoscine(path, apiToken, options = {}) {
+  const response = await fetch(`${COSCINE_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: buildAuthorizationHeader(apiToken),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorResponse(response));
+  }
+
+  return response;
+}
+
 export async function fetchCoscineProjects(apiToken) {
   const payload = await fetchCoscineJson(
     '/projects?PageNumber=1&PageSize=50&OrderBy=name%20asc',
@@ -125,6 +148,7 @@ export async function uploadROCrateToCoscine({
   resourceId,
   crateBlob,
   fileName,
+  metadataContent,
 }) {
   if (!projectId || !resourceId) {
     throw new Error('Select a Coscine resource first.');
@@ -134,22 +158,45 @@ export async function uploadROCrateToCoscine({
     throw new Error('Build an RO-Crate before uploading.');
   }
 
+  if (!String(metadataContent ?? '').trim()) {
+    throw new Error('Save Coscine metadata before uploading.');
+  }
+
   const encodedProjectId = encodeURIComponent(projectId);
   const encodedResourceId = encodeURIComponent(resourceId);
-  const encodedPath = encodeURIComponent(fileName);
-  const response = await fetch(
-    `${COSCINE_API_BASE}/projects/${encodedProjectId}/resources/${encodedResourceId}/storage/${encodedPath}/content`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: buildAuthorizationHeader(apiToken),
-        'Content-Type': crateBlob.type || 'application/zip',
-      },
-      body: crateBlob,
+  const encodedPath = encodeCoscinePath(fileName);
+  const metadataPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/graphs/${encodedPath}/metadata/content`;
+  const storagePath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/storage/${encodedPath}/content`;
+  const storageItemPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/storage/${encodedPath}`;
+
+  await fetchCoscine(metadataPath, apiToken, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'text/turtle',
     },
+    body: metadataContent,
+  });
+
+  const headResponse = await fetch(`${COSCINE_API_BASE}${storageItemPath}`, {
+    method: 'HEAD',
+    headers: {
+      Authorization: buildAuthorizationHeader(apiToken),
+    },
+  });
+
+  if (!headResponse.ok && headResponse.status !== 404) {
+    throw new Error(await parseErrorResponse(headResponse));
+  }
+
+  const formData = new FormData();
+  formData.append(
+    'file',
+    crateBlob,
+    fileName,
   );
 
-  if (!response.ok) {
-    throw new Error(await parseErrorResponse(response));
-  }
+  await fetchCoscine(storagePath, apiToken, {
+    method: headResponse.ok ? 'PUT' : 'POST',
+    body: formData,
+  });
 }

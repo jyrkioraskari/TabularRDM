@@ -145,6 +145,10 @@ The exported ZIP name is based on `dataset_id`, `dataset_name`, or `dataset`.
 The crate title falls back through `dataset_title`, `dataset_label`, `title`, and
 the derived dataset id.
 
+## RWTH Coscine Integration
+
+![TabulatRDM screen](screen2.png)
+
 ## Notes
 
 `npm run build` may show a Vite warning about chunks larger than 500 kB. This is

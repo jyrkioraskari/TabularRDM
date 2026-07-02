@@ -36,6 +36,28 @@ function getStaticPath(requestPath) {
   return filePath;
 }
 
+async function readRequestBody(request) {
+  const chunks = [];
+
+  for await (const chunk of request) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks);
+}
+
+function copyProxyHeaders(sourceHeaders) {
+  const headers = {};
+
+  for (const headerName of ['accept', 'authorization', 'content-type']) {
+    if (sourceHeaders[headerName]) {
+      headers[headerName] = sourceHeaders[headerName];
+    }
+  }
+
+  return headers;
+}
+
 async function proxyQudt(request, response) {
   const targetPath = request.url.replace(/^\/qudt/, '') || '/';
   const targetUrl = new URL(targetPath, qudtOrigin);
@@ -64,19 +86,18 @@ async function proxyQudt(request, response) {
 async function proxyCoscine(request, response) {
   const targetPath = request.url.replace(/^\/coscine-api/, '/coscine/api/v2') || '/';
   const targetUrl = new URL(targetPath, coscineApiOrigin);
-  const headers = {};
+  const hasRequestBody = !['GET', 'HEAD'].includes(request.method);
+  const requestBody = hasRequestBody ? await readRequestBody(request) : undefined;
+  const headers = copyProxyHeaders(request.headers);
 
-  for (const headerName of ['accept', 'authorization', 'content-type']) {
-    if (request.headers[headerName]) {
-      headers[headerName] = request.headers[headerName];
-    }
+  if (requestBody) {
+    headers['content-length'] = String(requestBody.byteLength);
   }
 
   const upstreamResponse = await fetch(targetUrl, {
     method: request.method,
     headers,
-    body: ['GET', 'HEAD'].includes(request.method) ? undefined : request,
-    duplex: ['GET', 'HEAD'].includes(request.method) ? undefined : 'half',
+    body: requestBody,
   });
   const responseHeaders = Object.fromEntries(upstreamResponse.headers.entries());
 

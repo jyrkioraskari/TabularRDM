@@ -23,7 +23,9 @@ export default function CoscineNode({
   const [isUploading, setIsUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const canBuildCrate = Boolean(data.roCrateInput?.jsonLdContent?.jsonLd);
+  const uploadMetadata = data.roCrateInput?.metadataContent?.trim() ?? '';
+  const canBuildCrate = Boolean(data.roCrateInput?.jsonLdContent?.jsonLd?.trim());
+  const hasUploadMetadata = Boolean(uploadMetadata);
   const selectedResource = useMemo(
     () => resources.find((resource) => resource.key === selectedResourceKey) ?? null,
     [resources, selectedResourceKey],
@@ -127,6 +129,7 @@ export default function CoscineNode({
         resourceId: selectedResource?.resourceId,
         crateBlob: cratePackage.blob,
         fileName: cratePackage.fileName,
+        metadataContent: uploadMetadata,
       });
       setStatus(`Uploaded ${cratePackage.fileName}.`);
     } catch (uploadError) {
@@ -135,9 +138,14 @@ export default function CoscineNode({
     } finally {
       setIsUploading(false);
     }
-  }, [apiToken, data.roCrateInput, selectedResource]);
+  }, [apiToken, data.roCrateInput, selectedResource, uploadMetadata]);
 
-  const uploadDisabled = isUploading || !apiToken.trim() || !selectedResource || !canBuildCrate;
+  const uploadDisabled =
+    isUploading ||
+    !apiToken.trim() ||
+    !selectedResource ||
+    !canBuildCrate ||
+    !hasUploadMetadata;
 
   return (
     <div className={`coscine-node${selected ? ' selected' : ''}`}>
@@ -195,7 +203,9 @@ export default function CoscineNode({
           (isLoadingProfile
             ? 'Loading Coscine form...'
             : canBuildCrate
-              ? 'Ready to upload the RO-Crate resource.'
+              ? hasUploadMetadata
+                ? 'Ready to upload the RO-Crate resource.'
+                : 'Save Coscine metadata before uploading.'
             : 'Connect an RO-Crate node to upload.')}
       </p>
       {error ? <p className="coscine-node__error">{error}</p> : null}

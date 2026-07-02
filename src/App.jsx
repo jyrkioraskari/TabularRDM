@@ -575,20 +575,28 @@ function propagateCoscineInputs(nodes, edges) {
   const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
   const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
   const roCrateInputByCoscineId = new Map();
+  const metadataInputsByCoscineId = new Map();
 
   for (const edge of edges) {
-    if (
-      nodeTypesById.get(edge.source) !== 'roCrate' ||
-      nodeTypesById.get(edge.target) !== 'coscine'
-    ) {
-      continue;
+    const sourceType = nodeTypesById.get(edge.source);
+    const targetType = nodeTypesById.get(edge.target);
+
+    if (sourceType === 'roCrate' && targetType === 'coscine') {
+      const sourceData = nodeDataById.get(edge.source) ?? {};
+      roCrateInputByCoscineId.set(edge.target, {
+        jsonLdContent: sourceData.jsonLdContent,
+        sheets: sourceData.sheets ?? [],
+      });
     }
 
-    const sourceData = nodeDataById.get(edge.source) ?? {};
-    roCrateInputByCoscineId.set(edge.target, {
-      jsonLdContent: sourceData.jsonLdContent,
-      sheets: sourceData.sheets ?? [],
-    });
+    if (sourceType === 'coscine' && targetType === 'metadataForm') {
+      const serializedRdf = nodeDataById.get(edge.target)?.serializedRdf || '';
+
+      if (serializedRdf) {
+        const existingInputs = metadataInputsByCoscineId.get(edge.source) ?? [];
+        metadataInputsByCoscineId.set(edge.source, [...existingInputs, serializedRdf]);
+      }
+    }
   }
 
   return nodes.map((node) => {
@@ -600,7 +608,12 @@ function propagateCoscineInputs(nodes, edges) {
       ...node,
       data: {
         ...node.data,
-        roCrateInput: roCrateInputByCoscineId.get(node.id) ?? null,
+        roCrateInput: roCrateInputByCoscineId.has(node.id)
+          ? {
+              ...roCrateInputByCoscineId.get(node.id),
+              metadataContent: (metadataInputsByCoscineId.get(node.id) ?? []).join('\n\n'),
+            }
+          : null,
       },
     };
   });
