@@ -11,6 +11,7 @@ import {
 } from '../services/aimsApi';
 import aimsIcon from '../assets/aims.png';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -197,6 +198,7 @@ export default function MetadataProfileSearchNode({ id, data, selected, onProfil
         )}
       </div>
 
+      <NodeInfoButton nodeType="profileSearch" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

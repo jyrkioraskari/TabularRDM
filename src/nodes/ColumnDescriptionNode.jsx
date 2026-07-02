@@ -6,6 +6,7 @@
 import { useCallback } from 'react';
 import tabularSchemaIcon from '../assets/tabular_schema.png';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 const UNIT_DRAG_MIME_TYPE = 'application/tabulatrdm-unit';
 
@@ -123,6 +124,10 @@ export default function ColumnDescriptionNode({ id, data, selected, onFieldsChan
         {hasFields ? 'Column descriptions are saved as RDF automatically' : 'No RDF to save yet'}
       </p>
 
+      <NodeInfoButton
+        nodeType={data.infoNodeType || 'columnDescription'}
+        language={data.language}
+      />
       <NodeHandle type="source" />
     </div>
   );

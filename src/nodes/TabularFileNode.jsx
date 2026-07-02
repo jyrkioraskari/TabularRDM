@@ -5,6 +5,7 @@
 import { useCallback, useRef, useState } from 'react';
 import tabularFileIcon from '../assets/tabular-file-icon.png';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 export default function TabularFileNode({ id, data, selected, onTabularLoaded }) {
   const fileInputRef = useRef(null);
@@ -66,6 +67,7 @@ export default function TabularFileNode({ id, data, selected, onTabularLoaded })
         <p className="tabular-file-node__meta">No tabular file loaded</p>
       )}
       {error ? <p className="tabular-file-node__meta">{error}</p> : null}
+      <NodeInfoButton nodeType="tabularFile" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

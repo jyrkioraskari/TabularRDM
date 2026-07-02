@@ -8,6 +8,7 @@ import '@ulb-darmstadt/shacl-form';
 import { fetchDefaultMetadataShapes } from '../services/metadataShapesService';
 import metadataFormIcon from '../assets/Architetto_--_Formulario.svg';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 const defaultMetadataValuesSubject = 'https://example.org/datasets/ro-kit';
 const defaultMetadataValues = `@prefix dcat: <http://www.w3.org/ns/dcat#> .
@@ -129,6 +130,7 @@ export default function MetadataFormNode({ id, data, selected, onRdfChange }) {
         {hasSaved ? 'Metadata saved' : isValid ? 'Metadata is valid' : 'Metadata not valid yet'}
       </p>
 
+      <NodeInfoButton nodeType="metadataForm" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

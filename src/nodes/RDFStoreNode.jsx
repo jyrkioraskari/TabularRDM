@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import rdfstoreScriptUrl from 'rdfstore/dist/rdfstore.js?url';
 import rdfLogo from '../assets/250px-Rdf_logo.svg.png';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 let rdfstoreScriptPromise = null;
 
@@ -207,6 +208,7 @@ export default function RDFStoreNode({ data, selected }) {
       ) : null}
       {status ? <p className="rdf-node__status">{status}</p> : null}
       {error ? <p className="rdf-node__error">{error}</p> : null}
+      <NodeInfoButton nodeType="rdfStore" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

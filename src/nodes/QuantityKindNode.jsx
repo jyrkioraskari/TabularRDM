@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { queryQuantityKinds } from '../services/qudtService';
 import qudtAvatar from '../assets/qudt-avatar.jpg';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 function capitalizeInitial(value) {
   if (!value) {
@@ -137,6 +138,7 @@ export default function QuantityKindNode({ id, data, selected, onQuantityKindSel
         )}
       </div>
 
+      <NodeInfoButton nodeType="quantityKind" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

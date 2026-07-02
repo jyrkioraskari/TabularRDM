@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addEdge,
   applyEdgeChanges,
@@ -35,18 +35,85 @@ import coscineLogo from './assets/coscine_rgb.svg';
 import rwthCaadLogo from './assets/rwth_caad_en_schwarz_grau_rgb.svg';
 import nfdi4ingLogo from './assets/nfdi4ing_24.svg';
 
+const nodeHandlers = {
+  onTabularLoaded: undefined,
+  onColumnDescriptionFieldsChange: undefined,
+  onMetadataRdfChange: undefined,
+  onProfileSelect: undefined,
+  onCoscineApplicationProfileLoaded: undefined,
+  onQuantityKindSelect: undefined,
+};
+
+function TabularFileNodeType(props) {
+  return <TabularFileNode {...props} onTabularLoaded={nodeHandlers.onTabularLoaded} />;
+}
+
+function ColumnDescriptionNodeType(props) {
+  return (
+    <ColumnDescriptionNode
+      {...props}
+      onFieldsChange={nodeHandlers.onColumnDescriptionFieldsChange}
+    />
+  );
+}
+
+function MetadataFormNodeType(props) {
+  return <MetadataFormNode {...props} onRdfChange={nodeHandlers.onMetadataRdfChange} />;
+}
+
+function MetadataProfileSearchNodeType(props) {
+  return (
+    <MetadataProfileSearchNode
+      {...props}
+      onProfileSelect={nodeHandlers.onProfileSelect}
+    />
+  );
+}
+
+function QuantityKindNodeType(props) {
+  return (
+    <QuantityKindNode
+      {...props}
+      onQuantityKindSelect={nodeHandlers.onQuantityKindSelect}
+    />
+  );
+}
+
+function CoscineNodeType(props) {
+  return (
+    <CoscineNode
+      {...props}
+      onApplicationProfileLoaded={nodeHandlers.onCoscineApplicationProfileLoaded}
+    />
+  );
+}
+
+const nodeTypes = {
+  tabularFile: TabularFileNodeType,
+  previewTabular: PreviewTabularDataNode,
+  columnDescription: ColumnDescriptionNodeType,
+  headerSchema: ColumnDescriptionNodeType,
+  metadataForm: MetadataFormNodeType,
+  profileSearch: MetadataProfileSearchNodeType,
+  quantityKind: QuantityKindNodeType,
+  unit: UnitNode,
+  rdfStore: RDFStoreNode,
+  roCrate: ROCrateNode,
+  coscine: CoscineNodeType,
+};
+
 const initialNodes = [
   {
     id: 'tabular-source',
     type: 'tabularFile',
     position: { x: 40, y: 80 },
-    data: { label: 'Tabular file 1' },
+    data: { label: 'Tabular file 1', language: 'en' },
   },
   {
     id: 'tabular',
     type: 'previewTabular',
     position: { x: 280, y: 80 },
-    data: { label: 'Preview Tabular Data 1' },
+    data: { label: 'Preview Tabular Data 1', language: 'en' },
   },
 ];
 
@@ -80,7 +147,11 @@ function applySemanticEdgeStyle(edge, nodes) {
       'columnDescription',
       'headerSchema',
     ].includes(nodeTypesById.get(edge.source)) &&
-      nodeTypesById.get(edge.target) === 'roCrate')
+      nodeTypesById.get(edge.target) === 'roCrate') ||
+    (nodeTypesById.get(edge.source) === 'roCrate' &&
+      nodeTypesById.get(edge.target) === 'coscine') ||
+    (nodeTypesById.get(edge.source) === 'coscine' &&
+      nodeTypesById.get(edge.target) === 'metadataForm')
   ) {
     return {
       ...edge,
@@ -127,8 +198,6 @@ const globalLanguageOptions = [
     iconSrc: 'https://unpkg.com/language-icons/icons/de.svg',
   },
 ];
-
-const languageAwareNodeTypes = new Set(['quantityKind', 'unit']);
 
 const appText = {
   en: {
@@ -499,6 +568,112 @@ function propagateROCrateInputs(nodes, edges) {
 }
 
 /**
+ * Passes the prepared RO-Crate inputs to connected Coscine nodes. The Coscine
+ * node builds the ZIP only when the user starts an upload.
+ */
+function propagateCoscineInputs(nodes, edges) {
+  const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
+  const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
+  const roCrateInputByCoscineId = new Map();
+
+  for (const edge of edges) {
+    if (
+      nodeTypesById.get(edge.source) !== 'roCrate' ||
+      nodeTypesById.get(edge.target) !== 'coscine'
+    ) {
+      continue;
+    }
+
+    const sourceData = nodeDataById.get(edge.source) ?? {};
+    roCrateInputByCoscineId.set(edge.target, {
+      jsonLdContent: sourceData.jsonLdContent,
+      sheets: sourceData.sheets ?? [],
+    });
+  }
+
+  return nodes.map((node) => {
+    if (node.type !== 'coscine') {
+      return node;
+    }
+
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        roCrateInput: roCrateInputByCoscineId.get(node.id) ?? null,
+      },
+    };
+  });
+}
+
+/**
+ * Sends the selected Coscine resource's application-profile form to connected
+ * Metadata Form nodes while preserving forms selected through AIMS.
+ */
+function propagateCoscineApplicationProfiles(nodes, edges) {
+  const nodeTypesById = new Map(nodes.map((node) => [node.id, node.type]));
+  const nodeDataById = new Map(nodes.map((node) => [node.id, node.data]));
+  const profileByMetadataFormId = new Map();
+
+  for (const edge of edges) {
+    if (
+      nodeTypesById.get(edge.source) !== 'coscine' ||
+      nodeTypesById.get(edge.target) !== 'metadataForm'
+    ) {
+      continue;
+    }
+
+    const profile = nodeDataById.get(edge.source)?.coscineApplicationProfile;
+
+    if (profile?.shapes) {
+      profileByMetadataFormId.set(edge.target, profile);
+    }
+  }
+
+  return nodes.map((node) => {
+    if (node.type !== 'metadataForm') {
+      return node;
+    }
+
+    const profile = profileByMetadataFormId.get(node.id);
+
+    if (profile) {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          shapes: profile.shapes,
+          shapesKey: profile.shapesKey,
+          profileName: profile.name,
+          profileBaseUri: profile.baseUri,
+          shapesSource: 'coscine',
+          coscineResourceName: profile.resourceName,
+        },
+      };
+    }
+
+    if (node.data.shapesSource !== 'coscine') {
+      return node;
+    }
+
+    const {
+      coscineResourceName,
+      profileBaseUri,
+      profileName,
+      shapes,
+      shapesKey,
+      shapesSource,
+      ...remainingData
+    } = node.data;
+
+    return {
+      ...node,
+      data: remainingData,
+    };
+  });
+}
+
+/**
  * Central recomputation pipeline for derived node data. Call this after any
  * node or edge change that may affect previews, RDF, units, or RO-Crate inputs.
  */
@@ -506,7 +681,13 @@ function deriveNodeData(nodes, edges, tabularMemory) {
   const flowNodes = recalculateFlows(nodes, edges, tabularMemory);
   const nodesWithMetadata = propagateMetadataRdf(flowNodes, edges);
   const nodesWithUnits = propagateQuantityKindToUnits(nodesWithMetadata, edges);
-  return propagateROCrateInputs(nodesWithUnits, edges);
+  const nodesWithROCrate = propagateROCrateInputs(nodesWithUnits, edges);
+  const nodesWithCoscineInputs = propagateCoscineInputs(nodesWithROCrate, edges);
+  const nodesWithCoscineProfiles = propagateCoscineApplicationProfiles(
+    nodesWithCoscineInputs,
+    edges,
+  );
+  return nodesWithCoscineProfiles;
 }
 
 export default function App() {
@@ -521,7 +702,6 @@ export default function App() {
   const edgesRef = useRef(edges);
   const tabularMemoryRef = useRef(new Map());
   const profileDefinitionRequestsRef = useRef(new Map());
-  const nodeHandlerRef = useRef({});
 
   useEffect(() => {
     nodesRef.current = nodes;
@@ -633,6 +813,7 @@ export default function App() {
                     shapesKey,
                     profileName: profileDefinition.name,
                     profileBaseUri: profileDefinition.baseUri,
+                    shapesSource: 'aims',
                   },
                 }
               : node,
@@ -683,6 +864,38 @@ export default function App() {
     [setNodes],
   );
 
+  const onCoscineApplicationProfileLoaded = useCallback(
+    (nodeId, profileDefinition) => {
+      setNodes((currentNodes) => {
+        const nodesWithProfile = currentNodes.map((node) =>
+          node.id === nodeId
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  coscineApplicationProfile: profileDefinition
+                    ? {
+                        ...profileDefinition,
+                        shapesKey: `coscine-${profileDefinition.baseUri}-${profileDefinition.resourceId}-${Date.now()}`,
+                      }
+                    : null,
+                },
+              }
+            : node,
+        );
+        const nextNodes = deriveNodeData(
+          nodesWithProfile,
+          edgesRef.current,
+          tabularMemoryRef.current,
+        );
+
+        nodesRef.current = nextNodes;
+        return nextNodes;
+      });
+    },
+    [setNodes],
+  );
+
   const onQuantityKindSelect = useCallback(
     (nodeId, quantityKind) => {
       setNodes((currentNodes) => {
@@ -716,17 +929,13 @@ export default function App() {
       document.documentElement.lang = language;
 
       setNodes((currentNodes) => {
-        const nextNodes = currentNodes.map((node) =>
-          languageAwareNodeTypes.has(node.type)
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  language,
-                },
-              }
-            : node,
-        );
+        const nextNodes = currentNodes.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            language,
+          },
+        }));
 
         nodesRef.current = nextNodes;
         return nextNodes;
@@ -735,60 +944,14 @@ export default function App() {
     [setNodes],
   );
 
-  nodeHandlerRef.current = {
+  Object.assign(nodeHandlers, {
     onTabularLoaded,
     onColumnDescriptionFieldsChange,
     onMetadataRdfChange,
     onProfileSelect,
+    onCoscineApplicationProfileLoaded,
     onQuantityKindSelect,
-  };
-
-  const nodeTypes = useMemo(
-    () => ({
-      tabularFile: (props) => (
-        <TabularFileNode
-          {...props}
-          onTabularLoaded={nodeHandlerRef.current.onTabularLoaded}
-        />
-      ),
-      previewTabular: PreviewTabularDataNode,
-      columnDescription: (props) => (
-        <ColumnDescriptionNode
-          {...props}
-          onFieldsChange={nodeHandlerRef.current.onColumnDescriptionFieldsChange}
-        />
-      ),
-      headerSchema: (props) => (
-        <ColumnDescriptionNode
-          {...props}
-          onFieldsChange={nodeHandlerRef.current.onColumnDescriptionFieldsChange}
-        />
-      ),
-      metadataForm: (props) => (
-        <MetadataFormNode
-          {...props}
-          onRdfChange={nodeHandlerRef.current.onMetadataRdfChange}
-        />
-      ),
-      profileSearch: (props) => (
-        <MetadataProfileSearchNode
-          {...props}
-          onProfileSelect={nodeHandlerRef.current.onProfileSelect}
-        />
-      ),
-      quantityKind: (props) => (
-        <QuantityKindNode
-          {...props}
-          onQuantityKindSelect={nodeHandlerRef.current.onQuantityKindSelect}
-        />
-      ),
-      unit: UnitNode,
-      rdfStore: RDFStoreNode,
-      roCrate: ROCrateNode,
-      coscine: CoscineNode,
-    }),
-    [],
-  );
+  });
 
   const onConnect = useCallback(
     (connection) =>
@@ -881,7 +1044,7 @@ export default function App() {
         position,
         data: {
           label: `${template.label} ${nextTypeCount}`,
-          ...(languageAwareNodeTypes.has(template.type) ? { language: globalLanguage } : {}),
+          language: globalLanguage,
         },
       };
 

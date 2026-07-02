@@ -10,6 +10,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/qudt/, ''),
       },
+      '/coscine-api': {
+        target: 'https://coscine.rwth-aachen.de/coscine/api/v2',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/coscine-api/, ''),
+      },
     },
   },
 });

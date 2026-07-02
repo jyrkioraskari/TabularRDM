@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { queryUnits } from '../services/qudtService';
 import qudtAvatar from '../assets/qudt-avatar.jpg';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 const UNIT_DRAG_MIME_TYPE = 'application/tabulatrdm-unit';
 
@@ -146,6 +147,7 @@ export default function UnitNode({ id, data, selected }) {
         )}
       </div>
 
+      <NodeInfoButton nodeType="unit" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );

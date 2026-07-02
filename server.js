@@ -6,6 +6,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 const port = Number(process.env.PORT) || 4173;
 const distDir = resolve('dist');
 const qudtOrigin = 'https://qudt.org';
+const coscineApiOrigin = 'https://coscine.rwth-aachen.de';
 
 const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -60,6 +61,40 @@ async function proxyQudt(request, response) {
   response.end();
 }
 
+async function proxyCoscine(request, response) {
+  const targetPath = request.url.replace(/^\/coscine-api/, '/coscine/api/v2') || '/';
+  const targetUrl = new URL(targetPath, coscineApiOrigin);
+  const headers = {};
+
+  for (const headerName of ['accept', 'authorization', 'content-type']) {
+    if (request.headers[headerName]) {
+      headers[headerName] = request.headers[headerName];
+    }
+  }
+
+  const upstreamResponse = await fetch(targetUrl, {
+    method: request.method,
+    headers,
+    body: ['GET', 'HEAD'].includes(request.method) ? undefined : request,
+    duplex: ['GET', 'HEAD'].includes(request.method) ? undefined : 'half',
+  });
+  const responseHeaders = Object.fromEntries(upstreamResponse.headers.entries());
+
+  delete responseHeaders['content-encoding'];
+  delete responseHeaders['content-length'];
+  responseHeaders['access-control-allow-origin'] = '*';
+
+  response.writeHead(upstreamResponse.status, responseHeaders);
+
+  if (upstreamResponse.body) {
+    for await (const chunk of upstreamResponse.body) {
+      response.write(chunk);
+    }
+  }
+
+  response.end();
+}
+
 async function serveStatic(request, response) {
   const filePath = getStaticPath(request.url);
 
@@ -93,6 +128,11 @@ const server = createServer(async (request, response) => {
   try {
     if (request.url.startsWith('/qudt')) {
       await proxyQudt(request, response);
+      return;
+    }
+
+    if (request.url.startsWith('/coscine-api')) {
+      await proxyCoscine(request, response);
       return;
     }
 

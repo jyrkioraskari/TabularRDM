@@ -4,6 +4,7 @@
  */
 import spreadsheetIcon from '../assets/matt-icons_text-x-office-generic-spreadsheet.svg';
 import NodeHandle from './NodeHandle';
+import NodeInfoButton from './NodeInfoButton';
 
 export default function PreviewTabularDataNode({ data, selected }) {
   const headers = Array.isArray(data.headers) ? data.headers : [];
@@ -43,6 +44,7 @@ export default function PreviewTabularDataNode({ data, selected }) {
         <p className="preview-tabular-data-node__empty">No tabular data loaded</p>
       )}
 
+      <NodeInfoButton nodeType="previewTabular" language={data.language} />
       <NodeHandle type="source" />
     </div>
   );
