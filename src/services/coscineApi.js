@@ -1,4 +1,11 @@
+import { DataFactory, Parser, Writer } from 'n3';
+
 const COSCINE_API_BASE = '/coscine-api';
+const DCTERMS_CONFORMS_TO = 'http://purl.org/dc/terms/conformsTo';
+const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+const SH_TARGET_CLASS = 'http://www.w3.org/ns/shacl#targetClass';
+
+const { namedNode, quad } = DataFactory;
 
 function buildAuthorizationHeader(apiToken) {
   const trimmedToken = String(apiToken ?? '').trim();
@@ -48,8 +55,14 @@ async function fetchCoscineJson(path, apiToken, options = {}) {
 
 function encodeCoscinePath(path) {
   return String(path ?? '')
+    .replace(/^\/+/, '')
     .split('/')
-    .map((segment) => encodeURIComponent(segment))
+    .filter(Boolean)
+    .map((segment) =>
+      encodeURIComponent(segment).replace(/[!'()*]/g, (character) =>
+        `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+      ),
+    )
     .join('/');
 }
 
@@ -67,6 +80,109 @@ async function fetchCoscine(path, apiToken, options = {}) {
   }
 
   return response;
+}
+
+async function fetchCoscineRaw(path, apiToken, options = {}) {
+  return fetch(`${COSCINE_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: buildAuthorizationHeader(apiToken),
+      ...options.headers,
+    },
+  });
+}
+
+function parseTurtle(content) {
+  const parser = new Parser({ format: 'text/turtle' });
+  return parser.parse(content);
+}
+
+async function serializeTurtle(quads) {
+  return new Promise((resolve, reject) => {
+    const writer = new Writer({ format: 'text/turtle' });
+    writer.addQuads(quads);
+    writer.end((error, result) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(result);
+    });
+  });
+}
+
+function findRootSubject(quads) {
+  const conformsToSubject = quads.find((item) => item.predicate.value === DCTERMS_CONFORMS_TO)?.subject;
+
+  if (conformsToSubject) {
+    return conformsToSubject;
+  }
+
+  const subjects = new Map();
+  const objectBlankNodes = new Set();
+
+  for (const item of quads) {
+    subjects.set(item.subject.id, item.subject);
+
+    if (item.object.termType === 'BlankNode') {
+      objectBlankNodes.add(item.object.id);
+    }
+  }
+
+  const candidates = Array.from(subjects.values()).filter((subject) => !objectBlankNodes.has(subject.id));
+
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  if (subjects.size === 1) {
+    return Array.from(subjects.values())[0];
+  }
+
+  return null;
+}
+
+function getApplicationProfileTargetClass(profile) {
+  const quads = parseTurtle(profile.shapes);
+  const targetClasses = quads
+    .filter((item) => item.predicate.value === SH_TARGET_CLASS && item.object.termType === 'NamedNode')
+    .map((item) => item.object.value);
+  const uniqueTargetClasses = Array.from(new Set(targetClasses));
+
+  return uniqueTargetClasses.length === 1 ? uniqueTargetClasses[0] : profile.baseUri;
+}
+
+async function normalizeMetadataLikeSdk(metadataContent, profile) {
+  if (!profile?.shapes) {
+    throw new Error('Load the Coscine metadata form before uploading.');
+  }
+
+  const targetClass = getApplicationProfileTargetClass(profile);
+  const quads = parseTurtle(metadataContent);
+  const rootSubject = findRootSubject(quads);
+
+  if (!rootSubject) {
+    throw new Error('Could not identify the root metadata subject in the serialized form data.');
+  }
+
+  const normalizedQuads = quads.filter(
+    (item) => !(item.subject.equals(rootSubject) && item.predicate.value === DCTERMS_CONFORMS_TO),
+  );
+
+  const hasTargetClassType = normalizedQuads.some(
+    (item) =>
+      item.subject.equals(rootSubject) &&
+      item.predicate.value === RDF_TYPE &&
+      item.object.termType === 'NamedNode' &&
+      item.object.value === targetClass,
+  );
+
+  if (!hasTargetClassType) {
+    normalizedQuads.unshift(quad(rootSubject, namedNode(RDF_TYPE), namedNode(targetClass)));
+  }
+
+  return serializeTurtle(normalizedQuads);
 }
 
 export async function fetchCoscineProjects(apiToken) {
@@ -149,6 +265,7 @@ export async function uploadROCrateToCoscine({
   crateBlob,
   fileName,
   metadataContent,
+  profile,
 }) {
   if (!projectId || !resourceId) {
     throw new Error('Select a Coscine resource first.');
@@ -165,38 +282,44 @@ export async function uploadROCrateToCoscine({
   const encodedProjectId = encodeURIComponent(projectId);
   const encodedResourceId = encodeURIComponent(resourceId);
   const encodedPath = encodeCoscinePath(fileName);
-  const metadataPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/graphs/${encodedPath}/metadata/content`;
+  const graphMetadataPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/graphs/${encodedPath}/metadata/content`;
+  const graphMetadataVersionsPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/graphs/${encodedPath}/metadata/versions`;
   const storagePath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/storage/${encodedPath}/content`;
-  const storageItemPath = `/projects/${encodedProjectId}/resources/${encodedResourceId}/storage/${encodedPath}`;
+  const normalizedMetadataContent = await normalizeMetadataLikeSdk(metadataContent, profile);
 
-  await fetchCoscine(metadataPath, apiToken, {
+  await fetchCoscine(graphMetadataPath, apiToken, {
     method: 'PUT',
     headers: {
       'Content-Type': 'text/turtle',
     },
-    body: metadataContent,
+    body: normalizedMetadataContent,
   });
-
-  const headResponse = await fetch(`${COSCINE_API_BASE}${storageItemPath}`, {
-    method: 'HEAD',
-    headers: {
-      Authorization: buildAuthorizationHeader(apiToken),
-    },
-  });
-
-  if (!headResponse.ok && headResponse.status !== 404) {
-    throw new Error(await parseErrorResponse(headResponse));
-  }
 
   const formData = new FormData();
-  formData.append(
-    'file',
-    crateBlob,
-    fileName,
-  );
+  formData.append('file', crateBlob, fileName);
 
-  await fetchCoscine(storagePath, apiToken, {
-    method: headResponse.ok ? 'PUT' : 'POST',
+  const createStorageResponse = await fetchCoscineRaw(storagePath, apiToken, {
+    method: 'POST',
     body: formData,
   });
+
+  if (!createStorageResponse.ok) {
+    if (createStorageResponse.status !== 409) {
+      throw new Error(await parseErrorResponse(createStorageResponse));
+    }
+
+    const updateFormData = new FormData();
+    updateFormData.append('file', crateBlob, fileName);
+
+    await fetchCoscine(storagePath, apiToken, {
+      method: 'PUT',
+      body: updateFormData,
+    });
+  }
+
+  const graphMetadataVersions = await fetchCoscineJson(graphMetadataVersionsPath, apiToken);
+
+  if (!Array.isArray(graphMetadataVersions?.data) || graphMetadataVersions.data.length === 0) {
+    throw new Error('Coscine accepted the upload, but no graph metadata version is listed for the file.');
+  }
 }

@@ -130,6 +130,7 @@ export default function CoscineNode({
         crateBlob: cratePackage.blob,
         fileName: cratePackage.fileName,
         metadataContent: uploadMetadata,
+        profile: data.coscineApplicationProfile,
       });
       setStatus(`Uploaded ${cratePackage.fileName}.`);
     } catch (uploadError) {
@@ -138,7 +139,7 @@ export default function CoscineNode({
     } finally {
       setIsUploading(false);
     }
-  }, [apiToken, data.roCrateInput, selectedResource, uploadMetadata]);
+  }, [apiToken, data.coscineApplicationProfile, data.roCrateInput, selectedResource, uploadMetadata]);
 
   const uploadDisabled =
     isUploading ||
