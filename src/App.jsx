@@ -118,6 +118,7 @@ const initialNodes = [
 ];
 
 const tabularPreviewEdgeStyle = { stroke: '#2563eb', strokeWidth: 2 };
+const savedLayoutsStorageKey = 'tabular-rdm.saved-layouts.v1';
 
 /**
  * Highlights connections that carry workflow data between compatible nodes.
@@ -203,13 +204,74 @@ const appText = {
   en: {
     sidebarHeading: 'Tabular Data Management',
     sidebarIntro: 'Drag a button into the canvas to create a node where you drop it.',
+    savedLayoutsHeading: 'Saved layouts',
+    layoutNameLabel: 'Layout name',
+    layoutNamePlaceholder: 'My workflow layout',
+    saveLayout: 'Save',
+    loadLayout: 'Load',
+    deleteLayout: 'Delete',
+    noSavedLayouts: 'No saved layouts',
+    selectSavedLayout: 'Select a saved layout',
+    layoutSaved: 'Layout saved in this browser.',
+    layoutLoaded: 'Layout loaded.',
+    layoutDeleted: 'Layout deleted.',
+    layoutNameRequired: 'Enter a name first.',
+    layoutSelectionRequired: 'Select a saved layout first.',
+    layoutLoadFailed: 'Could not load the saved layout.',
   },
   de: {
     sidebarHeading: 'Management von tabellarischen Daten',
     sidebarIntro:
       'Ziehe eine Schaltfläche auf die Arbeitsfläche, um an der Stelle, an der du sie ablegst, einen Knoten zu erstellen.',
+    savedLayoutsHeading: 'Gespeicherte Layouts',
+    layoutNameLabel: 'Layoutname',
+    layoutNamePlaceholder: 'Mein Workflow-Layout',
+    saveLayout: 'Speichern',
+    loadLayout: 'Laden',
+    deleteLayout: 'Loeschen',
+    noSavedLayouts: 'Keine gespeicherten Layouts',
+    selectSavedLayout: 'Gespeichertes Layout auswaehlen',
+    layoutSaved: 'Layout in diesem Browser gespeichert.',
+    layoutLoaded: 'Layout geladen.',
+    layoutDeleted: 'Layout geloescht.',
+    layoutNameRequired: 'Gib zuerst einen Namen ein.',
+    layoutSelectionRequired: 'Waehle zuerst ein gespeichertes Layout aus.',
+    layoutLoadFailed: 'Das gespeicherte Layout konnte nicht geladen werden.',
   },
 };
+
+function readSavedLayouts() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(savedLayoutsStorageKey) || '[]');
+    return Array.isArray(parsed)
+      ? parsed.filter((layout) => layout && typeof layout.name === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedLayouts(layouts) {
+  window.localStorage.setItem(savedLayoutsStorageKey, JSON.stringify(layouts));
+}
+
+function cleanNodeForStorage(node) {
+  const { dragging, selected, resizing, ...storedNode } = node;
+  return storedNode;
+}
+
+function cleanEdgeForStorage(edge) {
+  const { selected, ...storedEdge } = edge;
+  return storedEdge;
+}
+
+function restoreSavedEdges(edges, nodes) {
+  return edges.map((edge) => applySemanticEdgeStyle(cleanEdgeForStorage(edge), nodes));
+}
 
 /**
  * Creates editable column-description rows from spreadsheet headers while
@@ -237,6 +299,13 @@ function buildNodeTypeCounts(nodes) {
     counts[node.type] = (counts[node.type] ?? 0) + 1;
     return counts;
   }, {});
+}
+
+function getNextNodeIdCount(nodes) {
+  return nodes.reduce((highest, node) => {
+    const match = /^node-(\d+)$/.exec(node.id);
+    return match ? Math.max(highest, Number(match[1])) : highest;
+  }, initialNodes.length);
 }
 
 function normalizeCellValue(value) {
@@ -709,6 +778,10 @@ export default function App() {
   const [globalLanguage, setGlobalLanguage] = useState('en');
   const text = appText[globalLanguage] ?? appText.en;
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [savedLayouts, setSavedLayouts] = useState(() => readSavedLayouts());
+  const [layoutName, setLayoutName] = useState('');
+  const [selectedSavedLayout, setSelectedSavedLayout] = useState('');
+  const [layoutStatus, setLayoutStatus] = useState('');
   const nodeIdCountRef = useRef(initialNodes.length);
   const nodeTypeCountsRef = useRef(buildNodeTypeCounts(initialNodes));
   const nodesRef = useRef(nodes);
@@ -1070,6 +1143,109 @@ export default function App() {
     [globalLanguage, reactFlowInstance, setNodes],
   );
 
+  const saveCurrentLayout = useCallback(() => {
+    const trimmedName = layoutName.trim();
+
+    if (!trimmedName) {
+      setLayoutStatus(text.layoutNameRequired);
+      return;
+    }
+
+    const flowSnapshot = reactFlowInstance?.toObject?.();
+    const nextLayout = {
+      name: trimmedName,
+      savedAt: new Date().toISOString(),
+      nodes: nodesRef.current.map(cleanNodeForStorage),
+      edges: edgesRef.current.map(cleanEdgeForStorage),
+      viewport: flowSnapshot?.viewport ?? null,
+    };
+    const otherLayouts = savedLayouts.filter((layout) => layout.name !== trimmedName);
+    const nextLayouts = [...otherLayouts, nextLayout].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    try {
+      writeSavedLayouts(nextLayouts);
+      setSavedLayouts(nextLayouts);
+      setSelectedSavedLayout(trimmedName);
+      setLayoutStatus(text.layoutSaved);
+    } catch {
+      setLayoutStatus(text.layoutLoadFailed);
+    }
+  }, [layoutName, reactFlowInstance, savedLayouts, text.layoutLoadFailed, text.layoutNameRequired, text.layoutSaved]);
+
+  const loadSelectedLayout = useCallback(() => {
+    if (!selectedSavedLayout) {
+      setLayoutStatus(text.layoutSelectionRequired);
+      return;
+    }
+
+    const savedLayout = savedLayouts.find((layout) => layout.name === selectedSavedLayout);
+
+    if (!savedLayout || !Array.isArray(savedLayout.nodes) || !Array.isArray(savedLayout.edges)) {
+      setLayoutStatus(text.layoutLoadFailed);
+      return;
+    }
+
+    const restoredNodes = savedLayout.nodes.map(cleanNodeForStorage);
+    const restoredEdges = restoreSavedEdges(savedLayout.edges, restoredNodes);
+    const nextNodes = deriveNodeData(
+      restoredNodes,
+      restoredEdges,
+      tabularMemoryRef.current,
+    );
+
+    nodeIdCountRef.current = getNextNodeIdCount(nextNodes);
+    nodeTypeCountsRef.current = buildNodeTypeCounts(nextNodes);
+    nodesRef.current = nextNodes;
+    edgesRef.current = restoredEdges;
+    setNodes(nextNodes);
+    setEdges(restoredEdges);
+    setLayoutName(savedLayout.name);
+    setLayoutStatus(text.layoutLoaded);
+
+    if (savedLayout.viewport && reactFlowInstance?.setViewport) {
+      window.requestAnimationFrame(() => {
+        reactFlowInstance.setViewport(savedLayout.viewport);
+      });
+    }
+  }, [
+    reactFlowInstance,
+    savedLayouts,
+    selectedSavedLayout,
+    setEdges,
+    setNodes,
+    text.layoutLoadFailed,
+    text.layoutLoaded,
+    text.layoutSelectionRequired,
+  ]);
+
+  const deleteSelectedLayout = useCallback(() => {
+    if (!selectedSavedLayout) {
+      setLayoutStatus(text.layoutSelectionRequired);
+      return;
+    }
+
+    const nextLayouts = savedLayouts.filter(
+      (layout) => layout.name !== selectedSavedLayout,
+    );
+
+    try {
+      writeSavedLayouts(nextLayouts);
+      setSavedLayouts(nextLayouts);
+      setSelectedSavedLayout('');
+      setLayoutStatus(text.layoutDeleted);
+    } catch {
+      setLayoutStatus(text.layoutLoadFailed);
+    }
+  }, [
+    savedLayouts,
+    selectedSavedLayout,
+    text.layoutDeleted,
+    text.layoutLoadFailed,
+    text.layoutSelectionRequired,
+  ]);
+
   return (
     <div className="app-shell">
       <img className="app-logo" src={rwthCaadLogo} alt="RWTH CAAD" />
@@ -1116,6 +1292,62 @@ export default function App() {
             </button>
           ))}
         </div>
+        <section className="saved-layouts" aria-labelledby="saved-layouts-heading">
+          <h2 id="saved-layouts-heading">{text.savedLayoutsHeading}</h2>
+          <label className="saved-layouts__label" htmlFor="layout-name">
+            {text.layoutNameLabel}
+          </label>
+          <div className="saved-layouts__row">
+            <input
+              id="layout-name"
+              className="saved-layouts__input"
+              type="text"
+              value={layoutName}
+              placeholder={text.layoutNamePlaceholder}
+              onChange={(event) => setLayoutName(event.target.value)}
+            />
+            <button
+              type="button"
+              className="saved-layouts__button saved-layouts__button--primary"
+              onClick={saveCurrentLayout}
+            >
+              {text.saveLayout}
+            </button>
+          </div>
+          <select
+            className="saved-layouts__select"
+            value={selectedSavedLayout}
+            onChange={(event) => setSelectedSavedLayout(event.target.value)}
+          >
+            <option value="" disabled={savedLayouts.length > 0}>
+              {savedLayouts.length > 0 ? text.selectSavedLayout : text.noSavedLayouts}
+            </option>
+            {savedLayouts.map((layout) => (
+              <option key={layout.name} value={layout.name}>
+                {layout.name}
+              </option>
+            ))}
+          </select>
+          <div className="saved-layouts__actions">
+            <button
+              type="button"
+              className="saved-layouts__button"
+              onClick={loadSelectedLayout}
+              disabled={savedLayouts.length === 0}
+            >
+              {text.loadLayout}
+            </button>
+            <button
+              type="button"
+              className="saved-layouts__button"
+              onClick={deleteSelectedLayout}
+              disabled={savedLayouts.length === 0}
+            >
+              {text.deleteLayout}
+            </button>
+          </div>
+          {layoutStatus ? <p className="saved-layouts__status">{layoutStatus}</p> : null}
+        </section>
         <div className="sidebar-footer">
           <img className="sidebar-footer__logo" src={nfdi4ingLogo} alt="NFDI4Ing" />
         </div>

@@ -95,6 +95,7 @@ body {
   border-right: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(16px);
+  overflow-y: auto;
 }
 
 .eyebrow {
@@ -186,6 +187,84 @@ body {
   border-radius: 6px;
   background: #ffffff;
   object-fit: contain;
+}
+
+.saved-layouts {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.saved-layouts h2 {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.saved-layouts__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.saved-layouts__row,
+.saved-layouts__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.saved-layouts__input,
+.saved-layouts__select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.saved-layouts__button {
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #1e3a8a;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saved-layouts__button--primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.saved-layouts__button:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: #eff6ff;
+}
+
+.saved-layouts__button--primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.saved-layouts__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.saved-layouts__status {
+  margin: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .canvas {
